@@ -29,13 +29,12 @@ import java.net.URI
 import org.apache.hadoop.fs.Path
 import java.io.PrintWriter;
 
-
-
 //case class Twitter (topic: String, partition: String, fromOffSet: String, toOffSet: String, metrics: List[Metric])
 //case class Metric (lang: String, count: Int)
 
 object kafkaExactlyOnceSemantics {
 
+  
   private val twitterDateTime = new SimpleDateFormat("EEE MMM dd HH:mm:ss ZZZZZ yyyy")
 
   def safeDateTime(created_at: String): Timestamp = {
@@ -43,7 +42,8 @@ object kafkaExactlyOnceSemantics {
   }
   
   def functionToCreateContext(sparkConf: SparkConf, kafkaParams: Map[String, String],
-                              checkpointDirectory: String, topicsIn: String, batchsizeInSec: Long, mongoWriteConfig: MongodbConfigBuilder): StreamingContext = {
+                              checkpointDirectory: String, topicsIn: String, batchsizeInSec: Long, 
+                              mongoWriteConfig: MongodbConfigBuilder): StreamingContext = {
 
     val ssc = new StreamingContext(sparkConf, Seconds(batchsizeInSec))
     ssc.checkpoint(checkpointDirectory)
@@ -52,9 +52,6 @@ object kafkaExactlyOnceSemantics {
 
     val stream = KafkaUtils.createDirectStream[String, String, StringDecoder, StringDecoder](ssc, kafkaParams, topics)
 
-    val loadhdfs = "hdfs://localhost:9000/apps/spark/loadhdfs"
-    
-    
     stream.foreachRDD { rdd => 
       
       val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
@@ -64,30 +61,9 @@ object kafkaExactlyOnceSemantics {
         Tweeter (i,iter, osr)
       }  .coalesce(6, false). aggregateByKey(100)(math.max(_, _), _ + _).collect.foreach(println)
     } 
-    
-    /*stream.foreachRDD { rdd =>
-
-      val offsetRanges = rdd.asInstanceOf[HasOffsetRanges].offsetRanges
-
-      if (rdd.toLocalIterator.nonEmpty) {
-
-        val sqlContext = SQLContext.getOrCreate(rdd.sparkContext)
-        import sqlContext.implicits._
-        sqlContext.read.json(rdd.map(_._2)).registerTempTable("mytable")
-        
-        rdd.foreachPartition  { iter =>
-
-          val o: OffsetRange = offsetRanges(TaskContext.get.partitionId)  
-          println ( "you are READING "  + o.topic +":" + o.partition + " =>" + o.fromOffset + " -> " + o.untilOffset)
-          iter.map(row => TweetMapFunction(row._2)).foreach(println)
-          
-        }
-
-      }
-
-    }*/
 
     ssc
+  
   }
   
   def Tweeter (  index: Int, iter: Iterator[(String, String)], o: OffsetRange ) : Iterator [(String, Integer)] = {

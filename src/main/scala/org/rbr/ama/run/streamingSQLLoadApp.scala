@@ -1,11 +1,20 @@
+/**
+ * Created by sivagudavalli on 9/29/15.
+ */
+
 package org.rbr.ama.run
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.streaming.{Seconds, StreamingContext}
+import java.util.Properties
+import org.apache.spark.sql.{Row, SaveMode}
 
-object sscSQL {
-  
+/**
+ * @author sivagudavalli
+ */
+object streamingSQLLoadApp {
+
   def main(args: Array[String]) {
 
     val sparkConf = new SparkConf().setAppName("WC_streamingKafkaApp").setMaster("local[2]")
@@ -16,6 +25,16 @@ object sscSQL {
     // stream to count words in new files created
     val lines = ssc.textFileStream("/usr/local/sparkInput")
     val words = lines.flatMap(_.split(" "))
+
+    // **** Start ====> mysql connection specific details
+    val user = "postgres"
+    val pwd = "postgres"
+    val url = "jdbc:postgresql://localhost:5432/hivedb"
+
+    val prop = new java.util.Properties
+    prop.setProperty("user","postgres")
+    prop.setProperty("password","postgres")
+    // **** End ====> mysql connection specific details
 
     words.foreachRDD {
       rdd =>
@@ -30,12 +49,13 @@ object sscSQL {
         val wordCountsDataFrame =
           sqlContext.sql("select word, count(*) as total from words group by word")
 
-        wordCountsDataFrame.show()
+        wordCountsDataFrame.write.mode(SaveMode.Append).jdbc(url, "wordcounts", prop)
 
+        // wordCountsDataFrame.show()
     }
 
     ssc.start()
     ssc.awaitTermination()
   }
-  
 }
+

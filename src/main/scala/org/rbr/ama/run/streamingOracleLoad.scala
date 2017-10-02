@@ -1,13 +1,18 @@
+/**
+ * Created by sivagudavalli on 9/29/15.
+ */
+
 package org.rbr.ama.run
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SaveMode}
 import org.apache.spark.streaming.{Seconds, StreamingContext}
-import java.util.Properties
-import org.apache.spark.sql.{Row, SaveMode}
 
-object sscSQLLoad {
-  
+/**
+ * @author sivagudavalli
+ */
+object streamingOracleLoad {
+
   def main(args: Array[String]) {
 
     val sparkConf = new SparkConf().setAppName("WC_streamingKafkaApp").setMaster("local[2]")
@@ -50,5 +55,5 @@ object sscSQLLoad {
     ssc.start()
     ssc.awaitTermination()
   }
-  
 }
+

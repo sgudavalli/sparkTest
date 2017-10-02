@@ -1,14 +1,23 @@
+/**
+ * Created by sivagudavalli on 9/29/15.
+ */
+
 package org.rbr.ama.run
 
 import org.apache.spark.streaming.StreamingContext
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.Seconds
 
-object sscTextFileStream {
-  
+/**
+ * @author sivagudavalli
+ */
+object streamingApp {
+
   def main(args: Array[String]) {
 
-    val sparkConf = new SparkConf().setAppName("WC_streamingApp").setMaster("local[2]")
+    val sparkConf = new SparkConf()
+                          .setAppName("WC_streamingApp")
+                          .setMaster("local[2]")
     // Create the context
     val ssc = new StreamingContext(sparkConf, Seconds(10))
 
@@ -25,5 +34,5 @@ object sscTextFileStream {
     ssc.start()
     ssc.awaitTermination()
   }
-  
 }
+
